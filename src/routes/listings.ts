@@ -129,4 +129,51 @@ router.post("/", async (req, res) => {
   res.status(201).json({ _id: result.insertedId, ...newListing });
 });
 
+// ---------- PATCH /api/listings/:id (cambiar el precio) ----------
+router.patch("/:id", async (req, res) => {
+  if (!ObjectId.isValid(req.params.id)) {
+    res.status(400).json({ error: "El id no tiene un formato válido" });
+    return;
+  }
+
+  // Solo se lee price, el resto del body se ignora
+  const price: unknown = req.body?.price;
+
+  if (typeof price !== "number" || !Number.isFinite(price) || price < 0) {
+    res.status(400).json({ error: "price tiene que ser un número mayor o igual que 0" });
+    return;
+  }
+
+  const listing = await listingsCollection().findOneAndUpdate(
+    { _id: new ObjectId(req.params.id) },
+    { $set: { price } },
+    { returnDocument: "after" }
+  );
+
+  if (!listing) {
+    res.status(404).json({ error: "Anuncio no encontrado" });
+    return;
+  }
+
+  res.json(listing);
+});
+
+// ---------- DELETE /api/listings/:id (borrar) ----------
+router.delete("/:id", async (req, res) => {
+  if (!ObjectId.isValid(req.params.id)) {
+    res.status(400).json({ error: "El id no tiene un formato válido" });
+    return;
+  }
+
+  const result = await listingsCollection().deleteOne({ _id: new ObjectId(req.params.id) });
+
+  // Si no ha borrado nada es que no existía
+  if (result.deletedCount === 0) {
+    res.status(404).json({ error: "Anuncio no encontrado" });
+    return;
+  }
+
+  res.status(204).send();
+});
+
 export default router;
