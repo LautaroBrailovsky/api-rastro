@@ -1,13 +1,23 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
 import type { Filter } from "mongodb";
-import { listingsCollection } from "../db";
+import { listingsCollection, usersCollection } from "../db";
 import type { Listing } from "../types";
 
 const router = Router();
 
 // Lo que se enseña de cada anuncio en un listado
 const LIST_FIELDS = { title: 1, price: 1, category: 1, city: 1, status: 1 };
+
+// true si es un texto con algo dentro (no vale "" ni "   ")
+function isText(value: unknown): value is string {
+  return typeof value === "string" && value.trim() !== "";
+}
+
+// true si es un objeto normal (no vale null ni un array)
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 // ---------- GET /api/listings (listado) ----------
 router.get("/", async (req, res) => {
@@ -63,6 +73,60 @@ router.get("/:id", async (req, res) => {
   }
 
   res.json(listing);
+});
+
+// ---------- POST /api/listings (publicar) ----------
+router.post("/", async (req, res) => {
+  const body: Record<string, unknown> = req.body ?? {};
+  const { title, description, price, category, city } = body;
+
+  if (!isText(title) || !isText(description) || !isText(category) || !isText(city)) {
+    res.status(400).json({ error: "title, description, category y city son obligatorios y tienen que ser texto" });
+    return;
+  }
+
+  if (typeof price !== "number" || !Number.isFinite(price) || price < 0) {
+    res.status(400).json({ error: "price tiene que ser un número mayor o igual que 0" });
+    return;
+  }
+
+  if (typeof body.sellerId !== "string" || !ObjectId.isValid(body.sellerId)) {
+    res.status(400).json({ error: "sellerId no tiene un formato válido" });
+    return;
+  }
+
+  // attributes es opcional: si no llega, objeto vacío
+  const attributes = body.attributes ?? {};
+  if (!isObject(attributes)) {
+    res.status(400).json({ error: "attributes tiene que ser un objeto" });
+    return;
+  }
+
+  // MongoDB no comprueba las referencias: lo hacemos nosotros
+  const seller = await usersCollection().findOne({ _id: new ObjectId(body.sellerId) });
+  if (!seller) {
+    res.status(400).json({ error: "No existe ningún usuario con ese sellerId" });
+    return;
+  }
+
+  // Se construye campo a campo, nunca se guarda req.body tal cual
+  const newListing: Listing = {
+    title: title.trim(),
+    description: description.trim(),
+    price,
+    category: category.trim(),
+    status: "AVAILABLE",
+    city: city.trim(),
+    publishedAt: new Date(),
+    views: 0,
+    seller: { id: seller._id, name: seller.name },
+    photos: [],
+    attributes,
+  };
+
+  const result = await listingsCollection().insertOne(newListing);
+
+  res.status(201).json({ _id: result.insertedId, ...newListing });
 });
 
 export default router;
