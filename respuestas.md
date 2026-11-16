@@ -23,3 +23,11 @@ Porque esos campos los pone la API, no el cliente. Si no los ignorara, alguien p
 ## Pregunta 4
 
 No, la oferta guarda el precio que tenía el anuncio cuando Sara ofertó. Es un historial y no tiene que cambiar.
+
+## Pregunta 5
+
+Porque la petición está bien hecha, pero choca con el estado del anuncio, que ya está vendido.
+
+## Pregunta 6
+
+MongoDB comprueba los índices únicos, por ejemplo que no se repita un email. Yo he tenido que comprobar el resto, por ejemplo que el sellerId exista en users o que price sea un número.
