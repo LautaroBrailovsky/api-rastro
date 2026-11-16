@@ -19,3 +19,7 @@ Porque todo lo que viene en la URL llega como texto, así que busca price: "380"
 ## Pregunta 3
 
 Porque esos campos los pone la API, no el cliente. Si no los ignorara, alguien podría publicar un anuncio con visitas falsas o ya como SOLD.
+
+## Pregunta 4
+
+No, la oferta guarda el precio que tenía el anuncio cuando Sara ofertó. Es un historial y no tiene que cambiar.
