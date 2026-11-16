@@ -15,3 +15,7 @@ Recibo un 500 con "Error interno del servidor" después de unos 5 segundos. Resp
 ## Pregunta 2
 
 Porque todo lo que viene en la URL llega como texto, así que busca price: "380" y en Mongo el precio es el número 380.
+
+## Pregunta 3
+
+Porque esos campos los pone la API, no el cliente. Si no los ignorara, alguien podría publicar un anuncio con visitas falsas o ya como SOLD.
